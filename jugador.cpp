@@ -199,48 +199,6 @@ void ComportamientoJugador::AEstrella(
 
 }
 
-void ComportamientoJugador::ImprimirPasos(map<PosicionCuadricula, PosicionCuadricula>& pasos, PosicionCuadricula origen, PosicionCuadricula final) {
-    cout << "Imprimir pasos" << endl;
-    cout << "origen:" << origen << "final: " << final << endl;
-	PosicionCuadricula pos = final;
-	while (pos != origen) {
-		cout << pos.x << ", " << pos.y << endl;
-		pos = pasos[pos];
-	}
-}
-
-void ComportamientoJugador::ImprimirPasosConPlan(map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>, int>>& plan, PosicionCuadricula origen, PosicionCuadricula final) {
-    cout << "Imprimir plan" << endl;
-    cout << "origen:" << origen << "final: " << final << endl;
-	PosicionCuadricula pos = final;
-
-	char *Acciones[] = {
-        "Delante",
-        "Girar izquierda",
-        "Girar derecha",
-        "Quieto"
-    };
-
-    char *Direcciones[] = {
-        "Norte",
-        "Este",
-        "Sur",
-        "Oeste"
-    };
-
-	while (pos != origen) {
-		cout << pos.x << ", " << pos.y << endl;
-
-		for (Action accion : get<1>(plan[pos])) {
-            cout << Acciones[accion] << endl;
-		}
-
-		cout << "orientacion " << Direcciones[get<2>(plan[pos])] << endl;
-
-		pos = get<0>(plan[pos]);
-	}
-}
-
 void ComportamientoJugador::PintaPlan(list<Action> plan) {
 	auto it = plan.begin();
 	while (it!=plan.end()){
