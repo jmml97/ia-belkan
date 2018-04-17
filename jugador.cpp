@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <chrono>
 #include <stdlib.h>
 
 // Operadores sobrecargados de PosicionCuadricula ----
@@ -96,15 +97,18 @@ void ComportamientoJugador::AEstrella(
     // explorado
 	ColaPrioridad<PosicionCuadricula, double> frontera;
 
-    vector<PosicionCuadricula> explorados;
+    map<PosicionCuadricula, double> coste_hasta_ahora;
 
     // Valores iniciales de nuestro recorrido de movimiento
 	frontera.insertar(inicio, 0);
 	list<Action> acciones_iniciales = {actIDLE};
 	recorrido[inicio] = make_tuple(inicio, acciones_iniciales , brujula);
+    coste_hasta_ahora[inicio] = 0;
 
     int cont = 0;
     int coste = 0;
+
+    auto start = std::chrono::high_resolution_clock::now();
 
 	while (!frontera.vacia()) {
 		PosicionCuadricula actual = frontera.obtener();
@@ -127,24 +131,9 @@ void ComportamientoJugador::AEstrella(
             PosicionCuadricula siguiente_pos = siguiente.second;
             char siguiente_dir = siguiente.first;
 
-            // Tenemos que descartar las posiciones que ya hayamos visitado
-            // anteriormente
-            bool posicion_no_explorada = find(explorados.begin(),
-                                         explorados.end(),
-                                         siguiente_pos)
-                                         == explorados.end();
+            list<Action> acciones;
 
-            if (posicion_no_explorada) {
-
-            	explorados.push_back(siguiente_pos);
-
-            	double prioridad = Heuristica(siguiente_pos, destino);
-            	coste += prioridad;
-				frontera.insertar(siguiente_pos, prioridad);
-
-				list<Action> acciones;
-
-                // Para mover a nuestro personaje será necesario cambiar
+            // Para mover a nuestro personaje será necesario cambiar
                 // su orientación
                 switch(siguiente_dir) {
                     case 'N':
@@ -198,13 +187,33 @@ void ComportamientoJugador::AEstrella(
                 // Una vez orientado, lo movemos hacia adelante
                 acciones.push_front(actFORWARD);
 
+            double coste_siguiente = coste_hasta_ahora[actual] + acciones.size();
+
+            // Tenemos que descartar las posiciones que ya hayamos visitado
+            // anteriormente
+            bool posicion_no_explorada = coste_hasta_ahora.find(siguiente_pos)
+                                         == coste_hasta_ahora.end();
+            bool coste_menor = coste_siguiente < coste_hasta_ahora[siguiente_pos];
+
+            if (posicion_no_explorada || coste_menor) {
+
+                coste_hasta_ahora[siguiente_pos] = coste_siguiente;
+
+            	double prioridad = coste_siguiente +
+                                   Heuristica(siguiente_pos, destino);
+				frontera.insertar(siguiente_pos, prioridad);
+
 				recorrido[siguiente_pos] = make_tuple(actual, acciones, orientacion_siguiente);
             }
 
 		}
 	}
 
+	auto elapsed = std::chrono::high_resolution_clock::now() - start;
+	long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+
     cout << "iteraciones: " << cont << endl;
+    cout << microseconds << " microseconds elapsed" << endl;
 
 }
 
