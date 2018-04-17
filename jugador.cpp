@@ -23,14 +23,14 @@ PosicionCuadricula operator-(const PosicionCuadricula &p1, const PosicionCuadric
 
 //----
 
-bool ComportamientoJugador::posicion_correcta(PosicionCuadricula pos) {
+bool ComportamientoJugador::PosicionCorrecta(PosicionCuadricula pos) {
 	int ancho = mapaResultado.size();
 	int largo = mapaResultado[0].size();
 	return 0 <= pos.x && pos.x < ancho && 0 <= pos.y && pos.y < largo;
 }
 
 // Comprobamos si podemos cruzar una casilla
-bool ComportamientoJugador::atravesable(PosicionCuadricula pos) {
+bool ComportamientoJugador::PosicionAtravesable(PosicionCuadricula pos) {
 	char casilla = mapaResultado[pos.x][pos.y];
 
 	if (casilla == 'B' || casilla == 'A' || casilla == 'P' || casilla == 'M') {
@@ -40,7 +40,7 @@ bool ComportamientoJugador::atravesable(PosicionCuadricula pos) {
 	}
 }
 
-map<char, PosicionCuadricula> ComportamientoJugador::calcular_vecinos(PosicionCuadricula pos) {
+map<char, PosicionCuadricula> ComportamientoJugador::ObtenerVecinos(PosicionCuadricula pos) {
 
 	// Posibles vecinos de una casilla
 	map<char, PosicionCuadricula> direcciones = {
@@ -54,7 +54,7 @@ map<char, PosicionCuadricula> ComportamientoJugador::calcular_vecinos(PosicionCu
 
 	for (pair<char, PosicionCuadricula> dir : direcciones) {
         PosicionCuadricula siguiente{pos.x + dir.second.x, pos.y + dir.second.y};
-        if (posicion_correcta(siguiente) && atravesable(siguiente)) {
+        if (PosicionCorrecta(siguiente) && PosicionAtravesable(siguiente)) {
             vecinos[dir.first] = siguiente;
         }
 	}
@@ -62,7 +62,7 @@ map<char, PosicionCuadricula> ComportamientoJugador::calcular_vecinos(PosicionCu
 	return vecinos;
 }
 
-double ComportamientoJugador::heuristica(PosicionCuadricula a, PosicionCuadricula b) {
+double ComportamientoJugador::Heuristica(PosicionCuadricula a, PosicionCuadricula b) {
 	return abs(a.x - b.x) + abs(a.y - b.y);
 }
 
@@ -75,7 +75,7 @@ double ComportamientoJugador::heuristica(PosicionCuadricula a, PosicionCuadricul
 // explorados: almacena los nodos que ya hemos visitado
 //
 
-void ComportamientoJugador::a_estrella(
+void ComportamientoJugador::AEstrella(
 	PosicionCuadricula inicio,
 	PosicionCuadricula destino,
 	map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>, int>>& plan,
@@ -98,14 +98,14 @@ void ComportamientoJugador::a_estrella(
 		int orientacion_act = get<2>(plan[actual]);
 		int orientacion_sig;
 
-		for (pair<char, PosicionCuadricula> siguiente : calcular_vecinos(actual)) {
+		for (pair<char, PosicionCuadricula> siguiente : ObtenerVecinos(actual)) {
 
             PosicionCuadricula siguiente_pos = siguiente.second;
             char siguiente_dir = siguiente.first;
 
             if (find(explorados.begin(), explorados.end(), siguiente_pos) == explorados.end()) {
             	explorados.push_back(siguiente_pos);
-            	double prioridad = heuristica(siguiente_pos, destino);
+            	double prioridad = Heuristica(siguiente_pos, destino);
 				frontera.insertar(siguiente_pos, prioridad);
 
 				list<Action> acciones;
@@ -180,7 +180,7 @@ void ComportamientoJugador::a_estrella(
 
 }
 
-void ComportamientoJugador::imprimirPasos(map<PosicionCuadricula, PosicionCuadricula>& pasos, PosicionCuadricula origen, PosicionCuadricula final) {
+void ComportamientoJugador::ImprimirPasos(map<PosicionCuadricula, PosicionCuadricula>& pasos, PosicionCuadricula origen, PosicionCuadricula final) {
     cout << "Imprimir pasos" << endl;
     cout << "origen:" << origen << "final: " << final << endl;
 	PosicionCuadricula pos = final;
@@ -190,7 +190,7 @@ void ComportamientoJugador::imprimirPasos(map<PosicionCuadricula, PosicionCuadri
 	}
 }
 
-void ComportamientoJugador::imprimirPasosConPlan(map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>, int>>& plan, PosicionCuadricula origen, PosicionCuadricula final) {
+void ComportamientoJugador::ImprimirPasosConPlan(map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>, int>>& plan, PosicionCuadricula origen, PosicionCuadricula final) {
     cout << "Imprimir plan" << endl;
     cout << "origen:" << origen << "final: " << final << endl;
 	PosicionCuadricula pos = final;
@@ -285,7 +285,7 @@ bool ComportamientoJugador::pathFinding(const estado &origen, const estado &dest
 	PosicionCuadricula pos_org = {origen.fila, origen.columna};
 	PosicionCuadricula pos_dest = {destino.fila, destino.columna};
 
-	a_estrella(pos_org, pos_dest, recorrido, explorados);
+	AEstrella(pos_org, pos_dest, recorrido, explorados);
 
 	PosicionCuadricula pos = pos_dest;
 	while (pos != pos_org) {

@@ -80,11 +80,12 @@ class ComportamientoJugador : public Comportamiento {
     ComportamientoJugador(const ComportamientoJugador & comport) : Comportamiento(comport){}
     ~ComportamientoJugador(){}
 
-    bool posicion_correcta(PosicionCuadricula pos);
-    bool atravesable(PosicionCuadricula pos);
-    map<char, PosicionCuadricula> calcular_vecinos(PosicionCuadricula pos);
-    double heuristica(PosicionCuadricula a, PosicionCuadricula b);
-    void a_estrella(
+    bool PosicionCorrecta(PosicionCuadricula pos);
+    bool PosicionAtravesable(PosicionCuadricula pos);
+    map<char, PosicionCuadricula> ObtenerVecinos(PosicionCuadricula pos);
+
+    double Heuristica(PosicionCuadricula a, PosicionCuadricula b);
+    void AEstrella(
         PosicionCuadricula inicio,
         PosicionCuadricula destino,
         map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>, int>>& plan,
@@ -92,10 +93,16 @@ class ComportamientoJugador : public Comportamiento {
     );
 
     // Borrables/Revisables
-    void imprimirPasos(map<PosicionCuadricula, PosicionCuadricula>& pasos, PosicionCuadricula origen, PosicionCuadricula final);
-    void imprimirPasosConPlan(map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>, int>>& plan, PosicionCuadricula origen, PosicionCuadricula final);
-
-    list<Action> crearPlan(map<PosicionCuadricula, PosicionCuadricula>& pasos, PosicionCuadricula origen, PosicionCuadricula final);
+    void ImprimirPasos(map<PosicionCuadricula, 
+                       PosicionCuadricula>& pasos,
+                       PosicionCuadricula origen,
+                       PosicionCuadricula final
+    );
+    void ImprimirPasosConPlan(
+        map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>, int>>& plan, 
+        PosicionCuadricula origen, 
+        PosicionCuadricula final
+    );
 
     Action think(Sensores sensores);
     int interact(Action accion, int valor);
