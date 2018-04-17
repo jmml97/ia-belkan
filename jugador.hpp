@@ -88,19 +88,18 @@ class ComportamientoJugador : public Comportamiento {
     void AEstrella(
         PosicionCuadricula inicio,
         PosicionCuadricula destino,
-        map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>, int>>& plan,
-        vector<PosicionCuadricula>& explorados
+        map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>, int>>& plan
     );
 
     // Borrables/Revisables
-    void ImprimirPasos(map<PosicionCuadricula, 
+    void ImprimirPasos(map<PosicionCuadricula,
                        PosicionCuadricula>& pasos,
                        PosicionCuadricula origen,
                        PosicionCuadricula final
     );
     void ImprimirPasosConPlan(
-        map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>, int>>& plan, 
-        PosicionCuadricula origen, 
+        map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>, int>>& plan,
+        PosicionCuadricula origen,
         PosicionCuadricula final
     );
 

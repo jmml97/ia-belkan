@@ -90,27 +90,33 @@ double ComportamientoJugador::Heuristica(PosicionCuadricula a,
 void ComportamientoJugador::AEstrella(
 	PosicionCuadricula inicio,
 	PosicionCuadricula destino,
-	map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>,int>>& plan,
-	vector<PosicionCuadricula>& explorados) {
+	map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>,int>>& recorrido) {
 
     // La frontera está formada por los puntos más externos al área que hemos
     // explorado
 	ColaPrioridad<PosicionCuadricula, double> frontera;
 
-    // Valores iniciales de nuestro plan de movimiento
+    vector<PosicionCuadricula> explorados;
+
+    // Valores iniciales de nuestro recorrido de movimiento
 	frontera.insertar(inicio, 0);
 	list<Action> acciones_iniciales = {actIDLE};
-	plan[inicio] = make_tuple(inicio, acciones_iniciales , brujula);
+	recorrido[inicio] = make_tuple(inicio, acciones_iniciales , brujula);
+
+    int cont = 0;
+    int coste = 0;
 
 	while (!frontera.vacia()) {
 		PosicionCuadricula actual = frontera.obtener();
+
+        cont++;
 
 		if (actual == destino) {
 			break;
 		}
 
         // Orientación del personaje
-		int orientacion_actual = get<2>(plan[actual]);
+		int orientacion_actual = get<2>(recorrido[actual]);
 		int orientacion_siguiente;
 
         map<char, PosicionCuadricula> vecinos = ObtenerVecinos(actual);
@@ -133,6 +139,7 @@ void ComportamientoJugador::AEstrella(
             	explorados.push_back(siguiente_pos);
 
             	double prioridad = Heuristica(siguiente_pos, destino);
+            	coste += prioridad;
 				frontera.insertar(siguiente_pos, prioridad);
 
 				list<Action> acciones;
@@ -191,11 +198,13 @@ void ComportamientoJugador::AEstrella(
                 // Una vez orientado, lo movemos hacia adelante
                 acciones.push_front(actFORWARD);
 
-				plan[siguiente_pos] = make_tuple(actual, acciones, orientacion_siguiente);
+				recorrido[siguiente_pos] = make_tuple(actual, acciones, orientacion_siguiente);
             }
 
 		}
 	}
+
+    cout << "iteraciones: " << cont << endl;
 
 }
 
@@ -256,20 +265,31 @@ bool ComportamientoJugador::pathFinding(const estado &origen, const estado &dest
 
     plan.clear();
 
-    map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>, int>> recorrido;
-	vector<PosicionCuadricula> explorados;
+    map<PosicionCuadricula,
+        tuple<PosicionCuadricula,
+        list<Action>,
+        int>> recorrido;
 
-	PosicionCuadricula pos_org = {origen.fila, origen.columna};
-	PosicionCuadricula pos_dest = {destino.fila, destino.columna};
+	PosicionCuadricula pos_origen = {origen.fila, origen.columna};
+	PosicionCuadricula pos_destino = {destino.fila, destino.columna};
 
-	AEstrella(pos_org, pos_dest, recorrido, explorados);
+	AEstrella(pos_origen, pos_destino, recorrido);
 
-	PosicionCuadricula pos = pos_dest;
-	while (pos != pos_org) {
+	PosicionCuadricula pos = pos_destino;
+
+	int n_acciones = 0;
+	int n_pasos = 0;
+
+    // Vemos el recorrido desde el destino hasta el origen y vamos añadiendo
+    // las acciones al plan de movimiento
+	while (pos != pos_origen) {
+
+        n_pasos++;
 
         list<Action> acciones = get<1>(recorrido[pos]);
 
         for (Action act : acciones) {
+            n_acciones++;
             plan.push_front(act);
 	    }
 
@@ -280,8 +300,12 @@ bool ComportamientoJugador::pathFinding(const estado &origen, const estado &dest
 	if (!plan.empty()) {
         PintaPlan(plan);
         VisualizaPlan(origen, plan);
+        cout << "n_acciones: " << n_acciones << endl;
+        cout << "n_pasos: " << n_pasos << endl;
         return true;
 	}
+
+
 
   return false;
 }
