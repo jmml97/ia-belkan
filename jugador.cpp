@@ -13,11 +13,15 @@ ostream& operator<<(ostream& os, const PosicionCuadricula& pos)
     return os;
 }
 
-PosicionCuadricula operator+(const PosicionCuadricula &p1, const PosicionCuadricula &p2) {
+PosicionCuadricula operator+(const PosicionCuadricula &p1,
+                             const PosicionCuadricula &p2) {
+
 	return PosicionCuadricula{p1.x + p2.x, p1.y + p2.y};
 }
 
-PosicionCuadricula operator-(const PosicionCuadricula &p1, const PosicionCuadricula &p2) {
+PosicionCuadricula operator-(const PosicionCuadricula &p1,
+                             const PosicionCuadricula &p2) {
+
 	return PosicionCuadricula{p1.x - p2.x, p1.y - p2.y};
 }
 
@@ -26,6 +30,7 @@ PosicionCuadricula operator-(const PosicionCuadricula &p1, const PosicionCuadric
 bool ComportamientoJugador::PosicionCorrecta(PosicionCuadricula pos) {
 	int ancho = mapaResultado.size();
 	int largo = mapaResultado[0].size();
+
 	return 0 <= pos.x && pos.x < ancho && 0 <= pos.y && pos.y < largo;
 }
 
@@ -40,7 +45,8 @@ bool ComportamientoJugador::PosicionAtravesable(PosicionCuadricula pos) {
 	}
 }
 
-map<char, PosicionCuadricula> ComportamientoJugador::ObtenerVecinos(PosicionCuadricula pos) {
+map<char, PosicionCuadricula> ComportamientoJugador::ObtenerVecinos(
+    PosicionCuadricula pos) {
 
 	// Posibles vecinos de una casilla
 	map<char, PosicionCuadricula> direcciones = {
@@ -53,7 +59,9 @@ map<char, PosicionCuadricula> ComportamientoJugador::ObtenerVecinos(PosicionCuad
 	map<char, PosicionCuadricula> vecinos;
 
 	for (pair<char, PosicionCuadricula> dir : direcciones) {
-        PosicionCuadricula siguiente{pos.x + dir.second.x, pos.y + dir.second.y};
+        PosicionCuadricula siguiente{pos.x + dir.second.x,
+                                     pos.y + dir.second.y};
+
         if (PosicionCorrecta(siguiente) && PosicionAtravesable(siguiente)) {
             vecinos[dir.first] = siguiente;
         }
@@ -62,8 +70,12 @@ map<char, PosicionCuadricula> ComportamientoJugador::ObtenerVecinos(PosicionCuad
 	return vecinos;
 }
 
-double ComportamientoJugador::Heuristica(PosicionCuadricula a, PosicionCuadricula b) {
-	return abs(a.x - b.x) + abs(a.y - b.y);
+// Utilizamos la distancia L_1, suma de las diferencias (absolutas) de las
+// coordenadas
+double ComportamientoJugador::Heuristica(PosicionCuadricula a,
+                                         PosicionCuadricula b) {
+
+    return abs(a.x - b.x) + abs(a.y - b.y);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -78,11 +90,14 @@ double ComportamientoJugador::Heuristica(PosicionCuadricula a, PosicionCuadricul
 void ComportamientoJugador::AEstrella(
 	PosicionCuadricula inicio,
 	PosicionCuadricula destino,
-	map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>, int>>& plan,
-	vector<PosicionCuadricula>& explorados)
-{
+	map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>,int>>& plan,
+	vector<PosicionCuadricula>& explorados) {
+
+    // La frontera está formada por los puntos más externos al área que hemos
+    // explorado
 	ColaPrioridad<PosicionCuadricula, double> frontera;
 
+    // Valores iniciales de nuestro plan de movimiento
 	frontera.insertar(inicio, 0);
 	list<Action> acciones_iniciales = {actIDLE};
 	plan[inicio] = make_tuple(inicio, acciones_iniciales , brujula);
@@ -90,44 +105,55 @@ void ComportamientoJugador::AEstrella(
 	while (!frontera.vacia()) {
 		PosicionCuadricula actual = frontera.obtener();
 
-		if (actual == destino)
-		{
+		if (actual == destino) {
 			break;
 		}
 
-		int orientacion_act = get<2>(plan[actual]);
-		int orientacion_sig;
+        // Orientación del personaje
+		int orientacion_actual = get<2>(plan[actual]);
+		int orientacion_siguiente;
 
-		for (pair<char, PosicionCuadricula> siguiente : ObtenerVecinos(actual)) {
+        map<char, PosicionCuadricula> vecinos = ObtenerVecinos(actual);
+
+        // Iteramos entre todos los posibles vecinos de la casilla actual
+		for (pair<char, PosicionCuadricula> siguiente : vecinos) {
 
             PosicionCuadricula siguiente_pos = siguiente.second;
             char siguiente_dir = siguiente.first;
 
-            if (find(explorados.begin(), explorados.end(), siguiente_pos) == explorados.end()) {
+            // Tenemos que descartar las posiciones que ya hayamos visitado
+            // anteriormente
+            bool posicion_no_explorada = find(explorados.begin(),
+                                         explorados.end(),
+                                         siguiente_pos)
+                                         == explorados.end();
+
+            if (posicion_no_explorada) {
+
             	explorados.push_back(siguiente_pos);
+
             	double prioridad = Heuristica(siguiente_pos, destino);
 				frontera.insertar(siguiente_pos, prioridad);
 
 				list<Action> acciones;
 
-                // Reorientamos a nuestro personaje
+                // Para mover a nuestro personaje será necesario cambiar
+                // su orientación
                 switch(siguiente_dir) {
                     case 'N':
-                        switch (orientacion_act) {
+                        switch (orientacion_actual) {
                             case 1: acciones.push_front(actTURN_L);
                                     break;
-                            // Tiene que ir al Norte pero está mirando al sur como si viniese del Norte
-                            // ¿Ocurriría?
                             case 2: acciones.push_front(actTURN_L);
                                     acciones.push_front(actTURN_L);
                                     break;
                             case 3: acciones.push_front(actTURN_R);
                                     break;
                         }
-                        orientacion_sig = 0;
+                        orientacion_siguiente = 0;
                         break;
                     case 'E':
-                        switch (orientacion_act) {
+                        switch (orientacion_actual) {
                             case 0: acciones.push_front(actTURN_R);
                                     break;
                             case 2: acciones.push_front(actTURN_L);
@@ -136,10 +162,10 @@ void ComportamientoJugador::AEstrella(
                                     acciones.push_front(actTURN_R);
                                     break;
                         }
-                        orientacion_sig = 1;
+                        orientacion_siguiente = 1;
                         break;
                     case 'S':
-                        switch (orientacion_act) {
+                        switch (orientacion_actual) {
                             case 0: acciones.push_front(actTURN_R);
                                     acciones.push_front(actTURN_R);
                                     break;
@@ -148,10 +174,10 @@ void ComportamientoJugador::AEstrella(
                             case 3: acciones.push_front(actTURN_L);
                                     break;
                         }
-                        orientacion_sig = 2;
+                        orientacion_siguiente = 2;
                         break;
                     case 'O':
-                        switch (orientacion_act) {
+                        switch (orientacion_actual) {
                             case 0: acciones.push_front(actTURN_L);
                                     break;
                             case 1: acciones.push_front(actTURN_L);
@@ -160,19 +186,12 @@ void ComportamientoJugador::AEstrella(
                             case 2: acciones.push_front(actTURN_R);
                                     break;
                         }
-                        orientacion_sig = 3;
+                        orientacion_siguiente = 3;
                 }
-                // Lo movemos hacia adelante
+                // Una vez orientado, lo movemos hacia adelante
                 acciones.push_front(actFORWARD);
 
-                char *Acciones[] = {
-                    "Delante",
-                    "Girar izquierda",
-                    "Girar derecha",
-                    "Quieto"
-                };
-
-				plan[siguiente_pos] = make_tuple(actual, acciones, orientacion_sig);
+				plan[siguiente_pos] = make_tuple(actual, acciones, orientacion_siguiente);
             }
 
 		}
