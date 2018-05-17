@@ -1,0 +1,214 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[headsep=1cm,headheight=3cm,left=3.5cm,right=3.5cm,top=2.5cm,bottom=2.5cm,a4paper]{geometry}
+
+\linespread{1.3}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1em}
+
+\usepackage[spanish]{babel}
+%\usepackage[utf8]{inputenc}
+
+%% Fuentes personalizadas para utilizar con XeTeX
+\usepackage{fontspec}
+\setmonofont{Input Mono Condensed}
+\setmainfont{Neue Haas Grotesk Text Pro}
+%\usepackage[scaled=0.9]{DejaVuSansMono}
+%\usepackage[T1]{fontenc}
+
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=*}
+\setlist[enumerate]{leftmargin=*}
+
+\usepackage{changepage}
+
+\newcommand{\term}[2]{\textbf{#1}\quad#2}
+
+\newcounter{ActCounter}
+\newcommand{\act}[1]{\addtocounter{ActCounter}{1}\textbf{\sffamily ACT-\theActCounter}\quad#1\\}
+
+\newcounter{CUCounter}
+\newcommand{\cu}[1]{\addtocounter{CUCounter}{1}\textbf{\sffamily CU-\theCUCounter}\quad#1\\}
+
+\usepackage{tabularx}
+%\usepackage{float}
+\usepackage{adjustbox}
+
+\usepackage{xcolor}
+
+\definecolor{nord0}{HTML}{2e3440}
+\definecolor{nord4}{HTML}{d8dee9}
+\definecolor{nord11}{HTML}{bf616a}
+\definecolor{nord10}{HTML}{5e81ac}
+\definecolor{nord11}{HTML}{bf616a}
+
+\usepackage{listings}
+
+\lstset{
+language=C++,
+numbers=left,
+numberstyle=\small\ttfamily,
+basicstyle=\color{nord0},
+otherkeywords={self},             % Add keywords here
+keywordstyle=\color{nord10},
+emph={MyClass,__init__},          % Custom highlighting
+emphstyle=\color{nord11},    % Custom highlighting style
+stringstyle=\color{nord11},
+%frame=tb,                         % Any extra options here
+showstringspaces=false,            %
+breaklines=true,
+postbreak=\mbox{\textcolor{nord11}{$\hookrightarrow$}\space},
+}
+
+
+\lstset{basicstyle=\small\ttfamily}
+
+\title{Práctica 2: Los Mundos de BelKan}
+\author{José María Martín Luque}
+
+\begin{document}
+
+\maketitle
+
+\section*{Consideraciones previas}%
+\label{sec:consideraciones_previas}
+
+En el presente documento se recoge la implementación del algoritmo A* para la práctica 2 de la asignatura Inteligencia Artificial, así como de otras funciones y estructuras auxiliares necesarias para el correcto funcionamiento del mismo. En el guion de prácticas se establecía que la memoria no podía extenderse más de cinco páginas, algo que creo que es imposible si se pretende incluir y documentar el código.
+
+He realizado la práctica hasta el llamado \textit{nivel 3}, sin embargo, el personaje se detiene al llegar al primer objetivo. Esto es así para mostrar mi rechazo al sistema de evaluación de las prácticas 2 y 3 de esta asignatura, en concreto, al aspecto competitivo del mismo.
+
+La evaluación debe basarse en la comprobación de la adquisición de las competencias que corresponden a cada práctica, no en averiguar qué estudiante puede superar al resto de sus compañeros. Esta forma de evaluar rompe además las dinámicas de grupo de colaboración y compañerismo (algo en lo que también influye la insistencia constante sobre el carácter individual de las prácticas y el plagio).
+
+\textbf{La educación no es una competición.}
+
+\section{Implementación hasta el \textit{nivel 2}}
+
+\subsection*{Estructuras de apoyo}
+
+\subsubsection*{Estructura \texttt{PosicionCuadricula}}
+
+He definido este \texttt{struct} para almacenar posiciones de la cuadrícula. Se han definido también operaciones básicas de suma, diferencia, salida por \textit{stream}, igualdad y comparación.
+
+\lstinputlisting[linerange={19-38}]{./../dev/Comportamientos_Jugador/jugador.hpp}
+
+\subsubsection*{Estructura \texttt{ColaPrioridad}}
+
+Se trata de una implementación genérica de una cola con prioridad.
+\lstinputlisting[linerange={40-58}]{./../dev/Comportamientos_Jugador/jugador.hpp}
+
+\subsection*{Funciones de apoyo}
+
+Funciones con un objetivo concreto que serán utilizadas varias veces durante el funcionamiento del programa.
+
+\subsubsection*{Función \texttt{PosicionCorrecta}}
+
+Comprueba si una \texttt{PosicionCuadricula}  está dentro de los límites del mapa.
+
+\lstinputlisting[linerange={31-36}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+\subsubsection*{Función \texttt{PosicionAtravesable}}
+
+Comprueba si nuestro personaje puede atravesar una \texttt{PosicionCuadricula}  concreta.
+
+\lstinputlisting[linerange={39-47}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+\subsection*{Funciones del algoritmo}%
+\label{sec:funciones_del_algoritmo}
+
+A continuación se describen las funciones principales del algoritmo utilizado para el \textit{pathfinding} del personaje.
+
+\subsubsection*{Función \texttt{ObtenerVecinos} }%
+\label{sub:funcion_obtenervecinos_}
+
+Esta función nos proporciona las \texttt{PosicionCuadricula} colindantes a una dada.
+
+\lstinputlisting[linerange={49-72}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+\subsubsection*{Función \texttt{Heuristica} }%
+\label{sub:funcion_heuristica}
+
+Función que define la heurística usada en el algoritmo. Es la conocida como \textit{distancia Manhattan}.
+
+\lstinputlisting[linerange={76-80}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+\subsubsection*{Función \texttt{AEstrella} }%
+\label{sub:funcion_aestrella_}
+
+Es la función principal del algoritmo. Es una función de gran tamaño, por lo que la voy a desglosar. Veamos primero la cabecera de la función:
+
+\lstinputlisting[linerange={91-94}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+La función recibe un \texttt{inicio}, un \texttt{destino} y un \texttt{recorrido}, que es un \texttt{map} que asigna a cada \texttt{PosicionCuadricula} la posición anterior a ella, las acciones que debe realizar el personaje para llegar hasta ella y la orientación que deberá tener.
+
+A continuacón se declaran los valores iniciales de las variables auxiliares usadas durante el algoritmo.
+\lstinputlisting[linerange={98-108}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+En la siguiente línea comienza el bucle principal del algoritmo:
+
+\lstinputlisting[linerange={110-110}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+La \texttt{frontera} son las \texttt{PosicionCuadricula} adyacentes a las casillas que ya hemos explorado. Dentro del bucle obtenemos la siguiente \texttt{PosicionCuadricula} de la frontera y comprobamos si es el \texttt{destino}. Si no lo es, continuamos la ejecución obteniendo los \textit{vecinos} de la casilla actual e iteraremos entre las 4 posibilidades (o menos si quedan fuera del mapa).
+
+\lstinputlisting[linerange={111-124}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+Dentro de este bucle comenzamos asignando las variables auxiliares que vamos a utilizar:
+
+\lstinputlisting[linerange={126-129}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+Las acciones que tendrá que realizar nuestro personaje para avanzar a esta \texttt{PosicionCuadricula} dependerá de su orientación actual así como de dónde se encuentre dicha posición. Esto lo resolveremos en el siguiente \texttt{switch}:
+
+\lstinputlisting[linerange={131-183}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+Como ya sabemos, el algoritmo A* utiliza dos métricas para expresar la optimalidad de un camino. En nuestro caso una de ellas será el \texttt{coste}, definido como el número de acciones necesario para llegar hasta esa casilla:
+
+\lstinputlisting[linerange={185-185}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+Antes de añadir una \texttt{PosicionCuadricula} a nuestro recorrido debemos comprobar si \begin{itemize}
+  \item Esta \texttt{PosicionCuadricula} tiene un coste menor a otra que ya tengamos.
+  \item No hemos pasado nunca por esta \texttt{PosicionCuadricula}.
+\end{itemize}
+
+\lstinputlisting[linerange={189-191}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+Realizamos las comprobaciones y añadimos la \texttt{PosicionCuadricula} al recorrido, indicando la \texttt{PosicionCuadricula} anterior, las acciones requeridas para llegar hasta ella y la orientación final al llegar.
+
+\lstinputlisting[linerange={193-202}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+\subsection*{Funciones ya existentes}%
+\label{sec:funciones_ya_existentes}
+
+A continuación se describe la Implementación de las funciones que se proporcionaron con el resto del código del programa y que teníamos que completar.
+
+\subsubsection*{Función \texttt{PathFinding} }%
+\label{sub:funcion_pathfinding_}
+
+Es la función que se encarga de encontrar el recorrido desde la posición actual hasta el destino.
+
+\lstinputlisting[linerange={262-307}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+\subsubsection*{Función \texttt{think}}%
+\label{sub:funcion_think}
+
+Esta función se encarga de decidir la acción que debe realizar el personaje. Si no hay plan, pide a \texttt{PathFinding} que lo cree; lo mismo ocurre si el destino ha cambiado. Si hay un plan procede con él, excepto si hay un aldeano delante, parándose hasta que éste se mueva. En cualquier caso, actualiza la brújula del personaje según las acciones realizadas.
+
+\lstinputlisting[linerange={309-355}]{./../dev/Comportamientos_Jugador/jugador.cpp}
+
+\section{Implementación del \textit{nivel 3}}
+
+\subsection*{Funciones de apoyo}
+
+Para implementar el \textit{nivel 3} he reconvertido algunas de las funciones usadas en los niveles anteriores, creando \texttt{PosicionLocalCorrecta}, \texttt{PosicionLocalAtravesable}, \texttt{ObtenerVecinosLocales}, \texttt{AEstrellaLocal} y \texttt{pathFindingLocal}, que realizan el mismo trabajo que las otras versiones pero utilizando un mapa \textit{local} que representa únicamente la visión de nuestro personaje.
+
+La función \texttt{Deambular()} se utiliza cuando nuestro personaje no conoce su posición en el mundo. Escanea los sensores del personaje y si encuentra un \textit{PK}, lo almacena en una variable. Devuelve una acción al azar.
+
+\subsubsection*{Función \texttt{ActualizarMapa}}
+
+Esta función se encarga de escribir en la variable \texttt{mapaResultado} el contenido de los sensores, una vez que el personaje sepa la posición en la que se encuentra.
+
+\subsection*{Funciones ya definidas}
+
+He modificado el funcionamiento de la función \texttt{think()} para adaptarla a las peculiaridades del \textit{nivel 3}.  Si el personaje no conoce su posición, deambulará hasta que aviste un PK, en cuyo caso se dirigirá hacia él. Una vez se encuentre en el PK, llamará a \texttt{pathFindingLocal()} para que trace un camino a él.
+
+Al alcanzar el PK conoceremos las coordenadas de nuestro personaje, por lo que ya podemos utilizar la función \texttt{AEstrella}, que tratará las casillas \texttt{?} como atravesables. Puesto que el algoritmo se ejecuta cada vez que se llama a \texttt{think()}, el camino irá cambiando conforme nuestro personaje reciba información del entorno.   
+
+\end{document}

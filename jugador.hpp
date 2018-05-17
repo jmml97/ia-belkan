@@ -67,6 +67,12 @@ class ComportamientoJugador : public Comportamiento {
       destino.columna = -1;
       destino.orientacion = -1;
       hay_plan = false;
+      nivel = 3;
+
+      pk = {0,0};
+      mapa_local = {{0}};
+      tengo_posicion = false;
+      parar = 0;
     }
     ComportamientoJugador(std::vector< std::vector< unsigned char> > mapaR) : Comportamiento(mapaR) {
       // Inicializar Variables de Estado
@@ -91,6 +97,20 @@ class ComportamientoJugador : public Comportamiento {
         map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>, int>>& plan
     );
 
+    // Funciones locales
+    bool PosicionLocalCorrecta(PosicionCuadricula pos);
+    bool PosicionLocalAtravesable(PosicionCuadricula pos);
+    map<char, PosicionCuadricula> ObtenerVecinosLocales(PosicionCuadricula pos);
+    void AEstrellaLocal(
+    	PosicionCuadricula inicio,
+    	PosicionCuadricula destino,
+    	map<PosicionCuadricula, tuple<PosicionCuadricula, list<Action>,int>>& recorrido
+    );
+    bool pathFindingLocal(PosicionCuadricula origen, PosicionCuadricula destino, list<Action> &plan);
+    Action Deambular(Sensores sensores);
+
+    void ActualizarMapa(Sensores sensores);
+
     // Borrables/Revisables
     void ImprimirPasos(map<PosicionCuadricula,
                        PosicionCuadricula>& pasos,
@@ -114,6 +134,13 @@ class ComportamientoJugador : public Comportamiento {
     estado destino;
     list<Action> plan;
     bool hay_plan;
+    int nivel;
+
+    PosicionCuadricula pk;
+    array<array<char, 7>, 7> mapa_local;
+    bool tengo_posicion;
+    bool parar;
+    Action ultima_accion;
 
     bool pathFinding(const estado &origen, const estado &destino, list<Action> &plan);
     void PintaPlan(list<Action> plan);
